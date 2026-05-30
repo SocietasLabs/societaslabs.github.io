@@ -147,6 +147,18 @@
     .green { color: #86efac; }
     .red { color: var(--danger); }
 
+    .drift-graph svg {
+      width: 100%;
+      min-height: 250px;
+      overflow: visible;
+    }
+
+    .drift-caption {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
     section { padding: 58px 0; }
 
     .section-lead {
@@ -287,13 +299,49 @@
         </div>
       </div>
 
-      <div class="card terminal">
-        <div><span class="muted">hypothesis</span></div>
-        <br />
-        <div>state_t + goal → state_t+1</div>
-        <div>state_t+1 + goal → state_t+2</div>
-        <br />
-        <div><span class="purple">question:</span> does rollout stay on-manifold?</div>
+      <div class="card drift-graph">
+        <h3 style="margin-top:0">Rollout Drift</h3>
+
+        <svg viewBox="0 0 500 250" width="100%" role="img" aria-label="Rollout drift graph comparing plain rollout and JEPA rollout">
+          <line x1="60" y1="30" x2="60" y2="210" stroke="rgba(255,255,255,0.32)" />
+          <line x1="60" y1="210" x2="450" y2="210" stroke="rgba(255,255,255,0.32)" />
+
+          <text x="18" y="34" fill="#a7b0c7" font-size="12">drift</text>
+          <text x="405" y="238" fill="#a7b0c7" font-size="12">horizon</text>
+
+          <polyline
+            fill="none"
+            stroke="#fb7185"
+            stroke-width="3"
+            points="100,190 250,120 400,60"
+          />
+
+          <circle cx="100" cy="190" r="6" fill="#fb7185" />
+          <circle cx="250" cy="120" r="6" fill="#fb7185" />
+          <circle cx="400" cy="60" r="6" fill="#fb7185" />
+
+          <polyline
+            fill="none"
+            stroke="#22c55e"
+            stroke-width="3"
+            points="100,195 250,194 400,194"
+          />
+
+          <circle cx="100" cy="195" r="6" fill="#22c55e" />
+          <circle cx="250" cy="194" r="6" fill="#22c55e" />
+          <circle cx="400" cy="194" r="6" fill="#22c55e" />
+
+          <text x="85" y="230" fill="#a7b0c7" font-size="14">H1</text>
+          <text x="235" y="230" fill="#a7b0c7" font-size="14">H2</text>
+          <text x="385" y="230" fill="#a7b0c7" font-size="14">H3</text>
+
+          <text x="304" y="82" fill="#fb7185" font-size="14">Plain rollout</text>
+          <text x="304" y="184" fill="#22c55e" font-size="14">JEPA rollout</text>
+        </svg>
+
+        <p class="drift-caption">
+          Multi-step rollout drift comparison between a baseline model and a JEPA-style latent predictor.
+        </p>
       </div>
     </section>
 
@@ -317,6 +365,45 @@
           <p class="muted">The JEPA-style model keeps predicted future states close to the target manifold.</p>
           <div class="bar-row"><span>H2 drift</span><div class="bar"><div class="fill green" style="width: 1%"></div></div><span class="green">+0.0000</span></div>
           <div class="bar-row"><span>H3 drift</span><div class="bar"><div class="fill green" style="width: 1%"></div></div><span class="green">-0.0000</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container">
+      <div class="card">
+        <h2>Multi-step rollout stability</h2>
+        <p class="section-lead">
+          Drift increases rapidly for the baseline model as rollout horizons grow.
+          The JEPA-style model remains close to the target manifold.
+        </p>
+
+        <div class="grid">
+          <div class="mini-card">
+            <h3>Baseline rollout</h3>
+            <div class="metric red">+0.1843</div>
+            <div class="metric-label">H2 drift</div>
+            <br />
+            <div class="metric red">+0.3091</div>
+            <div class="metric-label">H3 drift</div>
+          </div>
+
+          <div class="mini-card">
+            <h3>DualEncoderJEPA</h3>
+            <div class="metric green">+0.0000</div>
+            <div class="metric-label">H2 drift</div>
+            <br />
+            <div class="metric green">-0.0000</div>
+            <div class="metric-label">H3 drift</div>
+          </div>
+
+          <div class="mini-card">
+            <h3>Interpretation</h3>
+            <p>
+              The baseline accumulates error as future states are predicted.
+              The JEPA-style architecture remains close to the target latent manifold,
+              suggesting that software evolution may contain learnable latent dynamics.
+            </p>
+          </div>
         </div>
       </div>
     </section>
