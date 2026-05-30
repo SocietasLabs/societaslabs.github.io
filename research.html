@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Research — SocietasLabs</title>
+  <meta name="description" content="Early research findings on software world models, JEPA-style latent rollout, and code evolution dynamics." />
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --panel: #121827;
+      --panel-soft: #182033;
+      --text: #eef2ff;
+      --muted: #a7b0c7;
+      --accent: #8b5cf6;
+      --accent-2: #22c55e;
+      --accent-soft: rgba(139, 92, 246, 0.18);
+      --green-soft: rgba(34, 197, 94, 0.14);
+      --line: rgba(255,255,255,0.12);
+      --danger: #fb7185;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139, 92, 246, 0.24), transparent 34rem),
+        radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.14), transparent 34rem),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .container {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 28px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      font-size: 1.1rem;
+    }
+
+    nav {
+      display: flex;
+      gap: 22px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    nav a:hover { color: var(--text); }
+
+    .hero {
+      padding: 86px 0 58px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 44px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      background: var(--accent-soft);
+      border-radius: 999px;
+      color: #d8ccff;
+      font-size: 0.9rem;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      font-size: clamp(3rem, 7vw, 6.2rem);
+      line-height: 0.92;
+      letter-spacing: -0.08em;
+      margin: 0 0 28px;
+    }
+
+    h2 {
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1;
+      letter-spacing: -0.06em;
+      margin: 0 0 18px;
+    }
+
+    h3 { margin: 0 0 10px; }
+
+    .lead {
+      color: var(--muted);
+      font-size: 1.22rem;
+      max-width: 760px;
+      margin: 0 0 34px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 13px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .actions { display: flex; gap: 14px; flex-wrap: wrap; }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.28);
+    }
+
+    .terminal {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #090d14;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      color: #d9e2ff;
+      overflow: auto;
+    }
+
+    .muted { color: var(--muted); }
+    .purple { color: #c4b5fd; }
+    .green { color: #86efac; }
+    .red { color: var(--danger); }
+
+    section { padding: 58px 0; }
+
+    .section-lead {
+      color: var(--muted);
+      font-size: 1.08rem;
+      max-width: 800px;
+      margin: 0 0 30px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .grid.two { grid-template-columns: repeat(2, 1fr); }
+
+    .mini-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 22px;
+    }
+
+    .mini-card p { margin: 0; color: var(--muted); }
+
+    .metric {
+      font-size: 2.4rem;
+      line-height: 1;
+      letter-spacing: -0.05em;
+      font-weight: 800;
+      margin: 10px 0;
+    }
+
+    .metric-label { color: var(--muted); font-size: 0.95rem; }
+
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 110px 1fr 80px;
+      gap: 12px;
+      align-items: center;
+      margin: 14px 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .bar {
+      height: 12px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .fill {
+      height: 100%;
+      background: var(--danger);
+      border-radius: 999px;
+    }
+
+    .fill.green { background: var(--accent-2); }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .step {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      min-height: 120px;
+    }
+
+    .step .num {
+      color: #c4b5fd;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+    }
+
+    .step p { margin: 0; color: var(--muted); font-size: 0.94rem; }
+
+    .quote {
+      font-size: clamp(1.4rem, 3vw, 2.4rem);
+      letter-spacing: -0.05em;
+      line-height: 1.12;
+      margin: 0;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 32px 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero, .compare, .grid.two { grid-template-columns: 1fr; }
+      .grid, .pipeline { grid-template-columns: 1fr; }
+      nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="container">
+    <a class="brand" href="index.html">SocietasLabs</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="#finding">Finding</a>
+      <a href="#method">Method</a>
+      <a href="#next">Next</a>
+      <a href="https://github.com/SocietasLabs">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <div>
+        <div class="eyebrow">Research note 001</div>
+        <h1>Early evidence for latent software dynamics.</h1>
+        <p class="lead">
+          We started with a controlled synthetic code-evolution world to test a simple question:
+          can a model learn how software moves through latent space across sequential edits?
+        </p>
+        <div class="actions">
+          <a class="button primary" href="#finding">View first finding</a>
+          <a class="button" href="index.html">Back to vision</a>
+        </div>
+      </div>
+
+      <div class="card terminal">
+        <div><span class="muted">hypothesis</span></div>
+        <br />
+        <div>state_t + goal → state_t+1</div>
+        <div>state_t+1 + goal → state_t+2</div>
+        <br />
+        <div><span class="purple">question:</span> does rollout stay on-manifold?</div>
+      </div>
+    </section>
+
+    <section id="finding" class="container">
+      <h2>First finding</h2>
+      <p class="section-lead">
+        On controlled synthetic code-evolution chains, a plain rollout model drifts over multiple steps.
+        A dual-encoder JEPA-style model remains stable across the same rollout horizons.
+      </p>
+
+      <div class="compare">
+        <div class="card">
+          <h3>Plain multi-step rollout</h3>
+          <p class="muted">Useful as a baseline, but rollout drift compounds as the horizon increases.</p>
+          <div class="bar-row"><span>H2 drift</span><div class="bar"><div class="fill" style="width: 59%"></div></div><span class="red">+0.1843</span></div>
+          <div class="bar-row"><span>H3 drift</span><div class="bar"><div class="fill" style="width: 100%"></div></div><span class="red">+0.3091</span></div>
+        </div>
+
+        <div class="card">
+          <h3>Dual-encoder JEPA rollout</h3>
+          <p class="muted">The JEPA-style model keeps predicted future states close to the target manifold.</p>
+          <div class="bar-row"><span>H2 drift</span><div class="bar"><div class="fill green" style="width: 1%"></div></div><span class="green">+0.0000</span></div>
+          <div class="bar-row"><span>H3 drift</span><div class="bar"><div class="fill green" style="width: 1%"></div></div><span class="green">-0.0000</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container">
+      <div class="grid">
+        <div class="mini-card">
+          <div class="metric">5,064</div>
+          <div class="metric-label">generated code transitions</div>
+        </div>
+        <div class="mini-card">
+          <div class="metric">4,797</div>
+          <div class="metric-label">validated transitions</div>
+        </div>
+        <div class="mini-card">
+          <div class="metric">89</div>
+          <div class="metric-label">scenario catalog size</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="method" class="container">
+      <h2>Controlled launchpad</h2>
+      <p class="section-lead">
+        Before moving to LLM-generated code evolution, we use deterministic synthetic transforms as a control condition.
+        This makes failure modes visible and keeps the latent dynamics measurable.
+      </p>
+
+      <div class="pipeline">
+        <div class="step"><div class="num">01</div><h3>Generate</h3><p>Synthetic before → after code transitions across reliability, security, observability, performance, maintainability, and API evolution.</p></div>
+        <div class="step"><div class="num">02</div><h3>Validate</h3><p>Code transitions are checked with parsing, compilation, and optional lint-style filters.</p></div>
+        <div class="step"><div class="num">03</div><h3>Embed</h3><p>Before states, after states, and change goals are mapped into latent space.</p></div>
+        <div class="step"><div class="num">04</div><h3>Roll out</h3><p>Models predict future latent states across multiple sequential edits.</p></div>
+        <div class="step"><div class="num">05</div><h3>Measure</h3><p>Drift, clustering, branch behavior, and rollout stability are inspected.</p></div>
+      </div>
+    </section>
+
+    <section class="container">
+      <h2>Two model tracks</h2>
+      <p class="section-lead">
+        The research currently compares a small direction baseline against a dual-encoder JEPA-style model.
+      </p>
+      <div class="grid two">
+        <div class="card">
+          <h3>DirectionHead baseline</h3>
+          <p class="muted">
+            A small model that predicts a normalized direction vector from a before-code embedding and a change description.
+            It remains useful as a sanity check because transform directions cluster cleanly by type.
+          </p>
+        </div>
+        <div class="card">
+          <h3>DualEncoderJEPA</h3>
+          <p class="muted">
+            A context encoder observes masked code views while a stable target encoder observes clean views.
+            A predictor aligns latent targets and a rollout head learns how software states move across edits.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="container">
+      <div class="card">
+        <p class="quote">
+          The interesting result is not that the model predicts code tokens.
+          It does not. The interesting result is that latent rollout can remain stable while plain multi-step rollout drifts.
+        </p>
+      </div>
+    </section>
+
+    <section id="next" class="container">
+      <h2>What comes next</h2>
+      <p class="section-lead">
+        The next step is to turn this research into a small public demo: a latent code map that shows how a proposed change moves a repository toward or away from a goal.
+      </p>
+      <div class="grid">
+        <div class="mini-card"><h3>Latent map explorer</h3><p>Visualize code states and evolution trajectories in 2D latent space.</p></div>
+        <div class="mini-card"><h3>Architectural fit score</h3><p>Score whether a proposed change fits the existing repository structure.</p></div>
+        <div class="mini-card"><h3>Goal-conditioned rollout</h3><p>Simulate future states before an agent executes code edits.</p></div>
+      </div>
+    </section>
+
+    <section class="container">
+      <div class="card">
+        <h2>Research direction</h2>
+        <p class="section-lead">
+          The long-term goal is to understand whether software systems have learnable dynamics that can be represented, predicted, and eventually planned before execution.
+        </p>
+        <a class="button primary" href="https://github.com/SocietasLabs">Follow on GitHub</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">© SocietasLabs — Research</div>
+  </footer>
+</body>
+</html>
