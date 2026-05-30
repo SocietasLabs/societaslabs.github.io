@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hypothesis — SocietasLabs</title>
+  <meta name="description" content="The hypothesis behind Software World Models: helping AI agents plan software changes at a conceptual level before execution." />
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --panel: #121827;
+      --panel-soft: #182033;
+      --text: #eef2ff;
+      --muted: #a7b0c7;
+      --accent: #8b5cf6;
+      --accent-2: #22c55e;
+      --accent-soft: rgba(139, 92, 246, 0.18);
+      --line: rgba(255,255,255,0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139, 92, 246, 0.24), transparent 34rem),
+        radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.16), transparent 34rem),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .container {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 28px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      font-size: 1.1rem;
+    }
+
+    nav {
+      display: flex;
+      gap: 22px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    nav a:hover { color: var(--text); }
+
+    .hero {
+      padding: 86px 0 62px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 44px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      background: var(--accent-soft);
+      border-radius: 999px;
+      color: #d8ccff;
+      font-size: 0.9rem;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      font-size: clamp(3rem, 7vw, 6.2rem);
+      line-height: 0.92;
+      letter-spacing: -0.08em;
+      margin: 0 0 28px;
+    }
+
+    h2 {
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1;
+      letter-spacing: -0.06em;
+      margin: 0 0 18px;
+    }
+
+    h3 { margin: 0 0 10px; }
+
+    .lead {
+      color: var(--muted);
+      font-size: 1.22rem;
+      max-width: 760px;
+      margin: 0 0 34px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 13px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .actions { display: flex; gap: 14px; flex-wrap: wrap; }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.28);
+    }
+
+    .terminal, .flow {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #090d14;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      color: #d9e2ff;
+      overflow: auto;
+      white-space: pre;
+    }
+
+    .muted { color: var(--muted); }
+    .purple { color: #c4b5fd; }
+    .green { color: #86efac; }
+
+    section { padding: 58px 0; }
+
+    .section-lead {
+      color: var(--muted);
+      font-size: 1.08rem;
+      max-width: 820px;
+      margin: 0 0 30px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .grid.two { grid-template-columns: repeat(2, 1fr); }
+
+    .mini-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 22px;
+    }
+
+    .mini-card p { margin: 0; color: var(--muted); }
+
+    .quote {
+      font-size: clamp(1.5rem, 3vw, 2.5rem);
+      letter-spacing: -0.05em;
+      line-height: 1.12;
+      margin: 0;
+    }
+
+    .path {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .path-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      min-height: 150px;
+      position: relative;
+    }
+
+    .path-card .num {
+      color: #c4b5fd;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+    }
+
+    .path-card p { color: var(--muted); margin: 0; }
+
+    .concept-map svg {
+      width: 100%;
+      min-height: 360px;
+      overflow: visible;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 32px 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero, .grid.two { grid-template-columns: 1fr; }
+      .grid, .path { grid-template-columns: 1fr; }
+      nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="container">
+    <a class="brand" href="index.html">SocietasLabs</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="research.html">Research</a>
+      <a href="#concept">Concept</a>
+      <a href="#goal">Goal</a>
+      <a href="https://github.com/SocietasLabs">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <div>
+        <div class="eyebrow">Core hypothesis</div>
+        <h1>Agents should plan software like humans do.</h1>
+        <p class="lead">
+          Humans rarely start by typing the final implementation. We first understand intent, architecture, constraints, and the shape of the solution.
+          Software World Models asks whether AI agents can be given a similar layer of insight before execution.
+        </p>
+        <div class="actions">
+          <a class="button primary" href="#concept">View hypothesis</a>
+          <a class="button" href="research.html">Research note</a>
+        </div>
+      </div>
+
+      <div class="card terminal">Human engineer:
+  understand goal
+  inspect architecture
+  reason about constraints
+  plan change path
+  then implement
+
+Current agent:
+  edit
+  test
+  fail
+  retry
+
+Hypothesis:
+  latent planning can become
+  the missing middle layer</div>
+    </section>
+
+    <section id="concept" class="container">
+      <h2>Not just the next edit.</h2>
+      <p class="section-lead">
+        The goal is not to predict that a function needs type hints or that a file needs a logging statement.
+        Those are surface edits. The deeper question is whether a model can learn concepts such as reliability, observability,
+        modularity, service boundaries, and microservice architecture as directions in latent software space.
+      </p>
+
+      <div class="grid">
+        <div class="mini-card">
+          <h3>Surface level</h3>
+          <p>Add type hints, add logging, add retry handling, rename variables, update tests.</p>
+        </div>
+        <div class="mini-card">
+          <h3>Concept level</h3>
+          <p>Understand reliability, service ownership, coupling, observability, and architectural intent.</p>
+        </div>
+        <div class="mini-card">
+          <h3>Planning level</h3>
+          <p>Predict the path from current software state toward a desired architecture before editing code.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="container">
+      <div class="card">
+        <p class="quote">
+          A useful software world model should not only know what code can be written.
+          It should help an agent understand what kind of system the code is becoming.
+        </p>
+      </div>
+    </section>
+
+    <section class="container">
+      <h2>From goal to architecture</h2>
+      <p class="section-lead">
+        A human engineer can hear “move this toward a microservices architecture” and understand that this is not one edit.
+        It involves boundaries, contracts, ownership, deployment shape, observability, failure modes, and gradual migration.
+      </p>
+
+      <div class="path">
+        <div class="path-card"><div class="num">state_0</div><h3>Current system</h3><p>A coupled application with unclear boundaries and shared responsibilities.</p></div>
+        <div class="path-card"><div class="num">state_1</div><h3>Boundaries emerge</h3><p>Domains, interfaces, and ownership lines become visible.</p></div>
+        <div class="path-card"><div class="num">state_2</div><h3>Services separate</h3><p>Capabilities move behind contracts with clearer runtime responsibility.</p></div>
+        <div class="path-card"><div class="num">state_n</div><h3>Goal approached</h3><p>The repository evolves toward a more modular service architecture.</p></div>
+      </div>
+    </section>
+
+    <section class="container">
+      <h2>Latent space as an insight layer</h2>
+      <p class="section-lead">
+        We believe latent space may become a useful planning surface for agents: a place where software states, goals, and architectural concepts can be compared before code is changed.
+      </p>
+
+      <div class="card concept-map">
+        <svg viewBox="0 0 760 360" role="img" aria-label="Conceptual latent map for software architecture planning">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <line x1="100" y1="265" x2="650" y2="80" stroke="rgba(139,92,246,0.45)" stroke-width="3" stroke-dasharray="8 8" />
+
+          <circle cx="100" cy="265" r="10" fill="#8b5cf6" filter="url(#glow)" />
+          <text x="70" y="300" fill="#a7b0c7" font-size="14">current repo</text>
+
+          <circle cx="240" cy="220" r="9" fill="#8b5cf6" />
+          <text x="205" y="250" fill="#a7b0c7" font-size="14">boundaries</text>
+
+          <circle cx="390" cy="165" r="9" fill="#8b5cf6" />
+          <text x="355" y="195" fill="#a7b0c7" font-size="14">contracts</text>
+
+          <circle cx="520" cy="120" r="9" fill="#8b5cf6" />
+          <text x="475" y="150" fill="#a7b0c7" font-size="14">observability</text>
+
+          <circle cx="650" cy="80" r="12" fill="#22c55e" filter="url(#glow)" />
+          <text x="585" y="55" fill="#bbf7d0" font-size="14">goal architecture</text>
+
+          <text x="225" y="72" fill="#c4b5fd" font-size="18">latent planning trajectory</text>
+          <text x="225" y="98" fill="#a7b0c7" font-size="14">current state + goal → future software states</text>
+        </svg>
+      </div>
+    </section>
+
+    <section id="goal" class="container">
+      <h2>The bigger goal</h2>
+      <p class="section-lead">
+        The long-term goal is to give AI agents a form of software insight: not consciousness, but a learned internal sense of how systems are structured,
+        how they evolve, and what consequences a change may have before it is executed.
+      </p>
+
+      <div class="grid two">
+        <div class="card">
+          <h3>For coding agents</h3>
+          <p class="muted">
+            A planning layer that helps agents reason about architecture, dependencies, failure modes, and future repository states before editing code.
+          </p>
+        </div>
+        <div class="card">
+          <h3>For language models</h3>
+          <p class="muted">
+            A way to augment LLMs with predictive structure: helping them move from fluent code generation toward deeper software understanding.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="container">
+      <div class="card">
+        <h2>Working hypothesis</h2>
+        <div class="flow">current repository state
+        +
+software goal
+        ↓
+latent software state
+        ↓
+future state rollout
+        ↓
+planning signal
+        ↓
+better agent action</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">© SocietasLabs — Hypothesis</div>
+  </footer>
+</body>
+</html>
