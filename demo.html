@@ -1,0 +1,46 @@
+from pathlib import Path
+
+html = Path("/mnt/data/demo_vertical_rollouts.html").read_text(encoding="utf-8")
+
+# Add target state data fields to DATA objects in a pragmatic way by replacing object snippets.
+# Since the file is minified-ish, insert function mapping in JS instead of expanding each data object.
+
+insert_after = """const stateSelect=document.getElementById("state"),intentSelect=document.getElementById("intent"),stateMeta=document.getElementById("stateMeta"),rolloutsEl=document.getElementById("rollouts"),analysisEl=document.getElementById("analysis"),mapEl=document.getElementById("map"),agentSignal=document.getElementById("agentSignal");let selected=0;"""
+
+replacement = insert_after + r'''
+function targetStateFor(intent){
+  const targets={
+    reliability:{
+      target_state:"state_4 reliable endpoint behavior",
+      expected_capabilities:["input validation","timeout handling","retry policy","structured error response"],
+      affected_files:["app/api/users.py","app/clients/user_client.py","tests/test_users_api.py"],
+      affected_functions:["get_user","client.fetch_user","validate_user_id"]
+    },
+    observability:{
+      target_state:"state_4 observable request path",
+      expected_capabilities:["structured logging","request context fields","latency metrics","trace propagation"],
+      affected_files:["app/api/users.py","app/observability/logging.py","app/observability/metrics.py"],
+      affected_functions:["get_user","logger.info","metrics.timer"]
+    },
+    api_cleanup:{
+      target_state:"state_4 normalized API contract",
+      expected_capabilities:["response schema","type hints","normalized return shape","validation tests"],
+      affected_files:["app/api/users.py","app/schemas/user.py","tests/test_users_contract.py"],
+      affected_functions:["get_user","UserResponse","validate_user_id"]
+    }
+  };
+  return targets[intent];
+}
+'''
+html = html.replace(insert_after, replacement)
+
+# Replace renderAnalysis to include target state and files/functions in signal
+old = """function renderAnalysis(){const r=rollouts()[selected],best=rollouts().reduce((a,b)=>a.score>b.score?a:b);const rows=Object.entries(r.components).map(([n,v])=>`<div class="calc-row"><span>${n}</span><div class="calc-bar"><div style="width:${v}%"></div></div><span>${v}%</span></div>`).join("");analysisEl.innerHTML=`<div><span style="color:#a7b0c7">candidate</span> = <span style="color:#c4b5fd">"${r.name}"</span></div><br>${rows}<div class="decision-box">selected_path = "${best.name}"<br>estimated_fit = ${best.score}%<br>output = planning_signal</div>`;agentSignal.textContent=JSON.stringify({type:"software_world_model_planning_signal",state:"state_0",intent:intentSelect.options[intentSelect.selectedIndex].text,selected_path:best.name,estimated_fit:best.score/100,route:best.steps,execution_hints:["apply changes in route order","validate after each state transition","keep edits local before expanding scope","stop if tests or behavior drift from intent"]},null,2)}"""
+
+new = """function renderAnalysis(){const r=rollouts()[selected],best=rollouts().reduce((a,b)=>a.score>b.score?a:b);const target=targetStateFor(intentSelect.value);const rows=Object.entries(r.components).map(([n,v])=>`<div class="calc-row"><span>${n}</span><div class="calc-bar"><div style="width:${v}%"></div></div><span>${v}%</span></div>`).join("");analysisEl.innerHTML=`<div><span style="color:#a7b0c7">candidate</span> = <span style="color:#c4b5fd">"${r.name}"</span></div><br>${rows}<div class="decision-box">selected_path = "${best.name}"<br>estimated_fit = ${best.score}%<br>target_state = "${target.target_state}"<br>output = planning_signal</div>`;agentSignal.textContent=JSON.stringify({type:"software_world_model_planning_signal",state:"state_0",intent:intentSelect.options[intentSelect.selectedIndex].text,selected_path:best.name,estimated_fit:best.score/100,route:best.steps,target_state:target.target_state,expected_capabilities:target.expected_capabilities,affected_files:target.affected_files,affected_functions:target.affected_functions,execution_hints:["apply changes in route order","validate after each state transition","prefer affected files/functions before expanding scope","stop if tests or behavior drift from intent"]},null,2)}"""
+
+html = html.replace(old, new)
+
+path = Path("/mnt/data/demo_planning_signal_details.html")
+path.write_text(html, encoding="utf-8")
+print(path)
