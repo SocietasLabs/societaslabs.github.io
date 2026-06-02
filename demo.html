@@ -1,13 +1,66 @@
-from pathlib import Path
-
-html = Path("/mnt/data/demo_vertical_rollouts.html").read_text(encoding="utf-8")
-
-# Add target state data fields to DATA objects in a pragmatic way by replacing object snippets.
-# Since the file is minified-ish, insert function mapping in JS instead of expanding each data object.
-
-insert_after = """const stateSelect=document.getElementById("state"),intentSelect=document.getElementById("intent"),stateMeta=document.getElementById("stateMeta"),rolloutsEl=document.getElementById("rollouts"),analysisEl=document.getElementById("analysis"),mapEl=document.getElementById("map"),agentSignal=document.getElementById("agentSignal");let selected=0;"""
-
-replacement = insert_after + r'''
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agent Planning Demo — SocietasLabs</title>
+<style>
+:root{--bg:#0b0f19;--panel:#121827;--panel-soft:#182033;--text:#eef2ff;--muted:#a7b0c7;--accent:#8b5cf6;--green:#22c55e;--red:#fb7185;--amber:#f59e0b;--line:rgba(255,255,255,.12);--accent-soft:rgba(139,92,246,.18)}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top left,rgba(139,92,246,.24),transparent 34rem),radial-gradient(circle at bottom right,rgba(34,197,94,.13),transparent 34rem),var(--bg);color:var(--text);line-height:1.6}
+a{color:inherit;text-decoration:none}.container{width:min(1180px,calc(100% - 40px));margin:0 auto}
+header{padding:28px 0;display:flex;justify-content:space-between;align-items:center}.brand{font-weight:700;letter-spacing:-.03em;font-size:1.1rem}
+nav{display:flex;gap:22px;color:var(--muted);font-size:.95rem}nav a:hover{color:var(--text)}
+.hero{padding:54px 0 24px}.eyebrow{display:inline-flex;padding:8px 12px;border:1px solid var(--line);background:var(--accent-soft);border-radius:999px;color:#d8ccff;font-size:.9rem;margin-bottom:22px}
+h1{font-size:clamp(3rem,7vw,5.8rem);line-height:.92;letter-spacing:-.08em;margin:0 0 24px;max-width:980px}
+h2{font-size:clamp(1.8rem,3vw,2.8rem);line-height:1;letter-spacing:-.06em;margin:0 0 18px}h3{margin:0 0 10px}
+.lead{color:var(--muted);font-size:1.16rem;max-width:890px;margin:0 0 22px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1px solid var(--line);border-radius:24px;padding:22px;box-shadow:0 24px 80px rgba(0,0,0,.26)}
+.button{display:inline-flex;align-items:center;justify-content:center;padding:13px 18px;border-radius:12px;border:1px solid var(--line);background:var(--panel-soft);color:var(--text);font-weight:650;cursor:pointer}.button.primary{background:var(--accent);border-color:var(--accent);color:white}
+.loop-compare{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:28px 0 48px}
+.flow{display:grid;gap:8px;margin-top:14px}.flow-node{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:12px 16px}.flow-node strong{display:block;margin-bottom:2px}.flow-node span{color:var(--muted);font-size:.92rem}.flow-arrow{color:var(--muted);text-align:center;line-height:1;font-size:1.1rem}.flow-node.highlight{border-color:rgba(139,92,246,.75);background:rgba(139,92,246,.16);box-shadow:0 0 0 3px rgba(139,92,246,.10)}.flow-node.output{border-color:rgba(34,197,94,.55);background:rgba(34,197,94,.10)}
+.control-bar{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;align-items:end;margin:24px 0 22px}label{display:block;color:var(--muted);font-size:.92rem;margin-bottom:8px}select{width:100%;border-radius:14px;border:1px solid var(--line);background:#090d14;color:var(--text);padding:13px 14px;font:inherit}
+.demo-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:20px;align-items:start;padding:0 0 58px}
+.state-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.pill{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}.pill strong{display:block;font-size:.9rem;margin-bottom:3px}.pill span{color:var(--muted);font-size:.9rem}
+.rollouts{display:grid;gap:14px;margin-top:16px}.rollout{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px;cursor:pointer;transition:border-color .15s ease,transform .15s ease}.rollout:hover,.rollout.selected{border-color:rgba(139,92,246,.85);transform:translateY(-1px)}.rollout.selected{box-shadow:0 0 0 3px rgba(139,92,246,.12)}
+.rollout-head{display:flex;justify-content:space-between;gap:16px;align-items:baseline;margin-bottom:12px}.score{color:#bbf7d0;font-weight:800;font-size:1.2rem}.steps{display:grid;gap:6px;color:var(--muted);font-size:.95rem;margin-top:10px}
+.step{border:1px solid var(--line);background:rgba(0,0,0,.16);border-radius:14px;padding:9px 12px}
+.step-arrow{text-align:center;color:var(--muted);line-height:1;font-size:.95rem}
+.selected-label{display:inline-flex;margin-left:8px;padding:4px 8px;border-radius:999px;border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.10);color:#bbf7d0;font-size:.78rem;vertical-align:middle}
+.map svg{width:100%;min-height:500px;overflow:visible}.analysis,.agent-signal{background:#090d14;border:1px solid var(--line);border-radius:18px;padding:18px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;color:#d9e2ff;margin-top:18px;overflow:auto;font-size:.92rem}
+.calc-row{display:grid;grid-template-columns:145px 1fr 56px;gap:10px;align-items:center;margin:12px 0;color:var(--muted);font-size:.92rem}.calc-bar{height:9px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.calc-bar div{height:100%;background:var(--accent);border-radius:999px}
+.decision-box{border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.08);border-radius:18px;padding:16px;margin-top:16px;color:#bbf7d0;font-family:inherit}
+.caption{color:var(--muted);font-size:.95rem;margin:10px 0 0}.note{margin-top:18px;border:1px solid rgba(139,92,246,.34);background:rgba(139,92,246,.08);border-radius:18px;padding:16px;color:#ddd6fe}
+footer{border-top:1px solid var(--line);padding:32px 0;color:var(--muted);font-size:.95rem}
+@media(max-width:980px){.loop-compare,.control-bar,.demo-grid{grid-template-columns:1fr}nav{display:none}}
+</style>
+</head>
+<body>
+<header class="container"><a class="brand" href="index.html">SocietasLabs</a><nav><a href="index.html">Home</a><a href="hypothesis.html">Hypothesis</a><a href="research.html">Research</a><a href="demo.html">Demo</a><a href="https://github.com/SocietasLabs">GitHub</a></nav></header>
+<main>
+<section class="hero container">
+<div class="eyebrow">Agent planning demo</div>
+<h1>Give coding agents a planning step.</h1>
+<p class="lead">Most coding agents act first and learn from feedback. This demo shows where a Software World Model could sit: between intent and execution, generating candidate rollouts before code is changed.</p>
+<div class="loop-compare">
+<div class="card"><h2>Current coding agent loop</h2><p class="caption">The agent chooses the next edit directly from context.</p><div class="flow"><div class="flow-node"><strong>User goal</strong><span>intent</span></div><div class="flow-arrow">↓</div><div class="flow-node"><strong>Coding agent</strong><span>decides next edit</span></div><div class="flow-arrow">↓</div><div class="flow-node"><strong>Execution</strong><span>edits code</span></div><div class="flow-arrow">↓</div><div class="flow-node"><strong>Feedback</strong><span>tests / errors / review</span></div><div class="flow-arrow">↺</div></div></div>
+<div class="card"><h2>With Software World Model</h2><p class="caption">The agent first asks for possible futures and a route.</p><div class="flow"><div class="flow-node"><strong>User goal</strong><span>intent</span></div><div class="flow-arrow">↓</div><div class="flow-node"><strong>Coding agent</strong><span>collects context</span></div><div class="flow-arrow">↓</div><div class="flow-node highlight"><strong>Software World Model</strong><span>generates rollouts</span></div><div class="flow-arrow">↓</div><div class="flow-node output"><strong>Planning signal</strong><span>selected route</span></div><div class="flow-arrow">↓</div><div class="flow-node"><strong>Execution</strong><span>edits with a plan</span></div><div class="flow-arrow">↺</div></div></div>
+</div>
+<div class="control-bar card"><div><label for="state">Current software state</label><select id="state"><option value="api">FastAPI endpoint with missing reliability guards</option><option value="function">Python function with fragile external call</option><option value="service">Small service with weak operational signals</option></select></div><div><label for="intent">Intent</label><select id="intent"><option value="reliability">Improve reliability</option><option value="observability">Improve observability</option><option value="api_cleanup">Normalize API behavior</option></select></div><button class="button primary" id="simulate">Generate rollouts</button></div>
+</section>
+<section class="container demo-grid">
+<div>
+<div class="card"><h2>state_0 + intent</h2><p class="caption">The planner starts from a software state, not a blank prompt.</p><div class="state-meta" id="stateMeta"></div></div>
+<div class="card" style="margin-top:20px"><h2>Candidate rollouts</h2><p class="caption">Each branch is a possible code-change route through future states. Click a branch to inspect its score.</p><div class="rollouts" id="rollouts"></div></div>
+</div>
+<div class="card"><h2>Selected trajectory</h2><p class="caption">The highlighted branch is the route returned to the coding agent.</p><div class="map"><svg id="map" viewBox="0 0 760 500"></svg></div><div class="analysis" id="analysis"></div><h2 style="margin-top:24px">Planning signal for agent</h2><p class="caption">This is the useful output: a route the coding agent can follow before editing.</p><pre class="agent-signal"><code id="agentSignal"></code></pre><div class="note">This demo illustrates planning over possible software futures. It does not predict exact code changes. It returns a planning signal that a coding agent could use before modifying files.</div></div>
+</section>
+</main>
+<footer><div class="container">© SocietasLabs — Agent Planning Demo</div></footer>
+<script>
+const STATE_META={api:{state:"FastAPI endpoint",validation:"missing",timeout:"missing",retry:"missing",logging:"basic"},function:{state:"Python function","external call":"fragile",errors:"unstructured",timeout:"missing",tests:"partial"},service:{state:"Small service",logs:"inconsistent",metrics:"missing",traces:"missing","failure signals":"weak"}};
+const DATA={reliability:[{name:"Guarded execution path",score:89,steps:["state_1 validation","state_2 timeout","state_3 retry","state_4 error shape"],components:{"Intent fit":92,Locality:88,"Risk control":90,Clarity:86}},{name:"Exception-first path",score:72,steps:["state_1 try/except","state_2 RuntimeError","state_3 logging","state_4 tests"],components:{"Intent fit":76,Locality:84,"Risk control":58,Clarity:70}},{name:"Async worker path",score:51,steps:["state_1 queue","state_2 worker","state_3 async retry","state_4 unclear API"],components:{"Intent fit":54,Locality:40,"Risk control":45,Clarity:64}}],observability:[{name:"Structured telemetry path",score:91,steps:["state_1 logger","state_2 context","state_3 metrics","state_4 traces"],components:{"Intent fit":94,Locality:90,"Risk control":88,Clarity:92}},{name:"Metrics-first path",score:78,steps:["state_1 counter","state_2 latency","state_3 errors","state_4 dashboards"],components:{"Intent fit":81,Locality:83,"Risk control":75,Clarity:74}},{name:"Logs-only path",score:58,steps:["state_1 info logs","state_2 exception logs","state_3 request id","state_4 no traces"],components:{"Intent fit":55,Locality:88,"Risk control":50,Clarity:70}}],api_cleanup:[{name:"Contract-first path",score:86,steps:["state_1 schema","state_2 type hints","state_3 return shape","state_4 validation tests"],components:{"Intent fit":90,Locality:87,"Risk control":82,Clarity:88}},{name:"Helper extraction path",score:74,steps:["state_1 helper","state_2 validation helper","state_3 update returns","state_4 tests later"],components:{"Intent fit":77,Locality:82,"Risk control":68,Clarity:71}},{name:"Decorator-first path",score:62,steps:["state_1 decorator","state_2 wrapped endpoint","state_3 mixed returns","state_4 docs"],components:{"Intent fit":60,Locality:76,"Risk control":55,Clarity:57}}]};
+const stateSelect=document.getElementById("state"),intentSelect=document.getElementById("intent"),stateMeta=document.getElementById("stateMeta"),rolloutsEl=document.getElementById("rollouts"),analysisEl=document.getElementById("analysis"),mapEl=document.getElementById("map"),agentSignal=document.getElementById("agentSignal");let selected=0;
 function targetStateFor(intent){
   const targets={
     reliability:{
@@ -31,16 +84,14 @@ function targetStateFor(intent){
   };
   return targets[intent];
 }
-'''
-html = html.replace(insert_after, replacement)
 
-# Replace renderAnalysis to include target state and files/functions in signal
-old = """function renderAnalysis(){const r=rollouts()[selected],best=rollouts().reduce((a,b)=>a.score>b.score?a:b);const rows=Object.entries(r.components).map(([n,v])=>`<div class="calc-row"><span>${n}</span><div class="calc-bar"><div style="width:${v}%"></div></div><span>${v}%</span></div>`).join("");analysisEl.innerHTML=`<div><span style="color:#a7b0c7">candidate</span> = <span style="color:#c4b5fd">"${r.name}"</span></div><br>${rows}<div class="decision-box">selected_path = "${best.name}"<br>estimated_fit = ${best.score}%<br>output = planning_signal</div>`;agentSignal.textContent=JSON.stringify({type:"software_world_model_planning_signal",state:"state_0",intent:intentSelect.options[intentSelect.selectedIndex].text,selected_path:best.name,estimated_fit:best.score/100,route:best.steps,execution_hints:["apply changes in route order","validate after each state transition","keep edits local before expanding scope","stop if tests or behavior drift from intent"]},null,2)}"""
-
-new = """function renderAnalysis(){const r=rollouts()[selected],best=rollouts().reduce((a,b)=>a.score>b.score?a:b);const target=targetStateFor(intentSelect.value);const rows=Object.entries(r.components).map(([n,v])=>`<div class="calc-row"><span>${n}</span><div class="calc-bar"><div style="width:${v}%"></div></div><span>${v}%</span></div>`).join("");analysisEl.innerHTML=`<div><span style="color:#a7b0c7">candidate</span> = <span style="color:#c4b5fd">"${r.name}"</span></div><br>${rows}<div class="decision-box">selected_path = "${best.name}"<br>estimated_fit = ${best.score}%<br>target_state = "${target.target_state}"<br>output = planning_signal</div>`;agentSignal.textContent=JSON.stringify({type:"software_world_model_planning_signal",state:"state_0",intent:intentSelect.options[intentSelect.selectedIndex].text,selected_path:best.name,estimated_fit:best.score/100,route:best.steps,target_state:target.target_state,expected_capabilities:target.expected_capabilities,affected_files:target.affected_files,affected_functions:target.affected_functions,execution_hints:["apply changes in route order","validate after each state transition","prefer affected files/functions before expanding scope","stop if tests or behavior drift from intent"]},null,2)}"""
-
-html = html.replace(old, new)
-
-path = Path("/mnt/data/demo_planning_signal_details.html")
-path.write_text(html, encoding="utf-8")
-print(path)
+function rollouts(){return DATA[intentSelect.value]}
+function renderState(){stateMeta.innerHTML=Object.entries(STATE_META[stateSelect.value]).map(([k,v])=>`<div class="pill"><strong>${k}</strong><span>${v}</span></div>`).join("")}
+function renderRollouts(){rolloutsEl.innerHTML="";rollouts().forEach((r,idx)=>{const div=document.createElement("div");div.className="rollout"+(idx===selected?" selected":"");const selectedLabel=idx===selected?'<span class="selected-label">selected</span>':'';const verticalSteps=['state_0 current state',...r.steps];div.innerHTML=`<div class="rollout-head"><h3>${r.name}${selectedLabel}</h3><div class="score">${r.score}%</div></div><div class="steps">${verticalSteps.map((s,i)=>`<div class="step">${s}</div>${i<verticalSteps.length-1?'<div class="step-arrow">↓</div>':''}`).join("")}</div>`;div.addEventListener("click",()=>{selected=idx;render()});rolloutsEl.appendChild(div)})}
+function renderAnalysis(){const r=rollouts()[selected],best=rollouts().reduce((a,b)=>a.score>b.score?a:b);const target=targetStateFor(intentSelect.value);const rows=Object.entries(r.components).map(([n,v])=>`<div class="calc-row"><span>${n}</span><div class="calc-bar"><div style="width:${v}%"></div></div><span>${v}%</span></div>`).join("");analysisEl.innerHTML=`<div><span style="color:#a7b0c7">candidate</span> = <span style="color:#c4b5fd">"${r.name}"</span></div><br>${rows}<div class="decision-box">selected_path = "${best.name}"<br>estimated_fit = ${best.score}%<br>target_state = "${target.target_state}"<br>output = planning_signal</div>`;agentSignal.textContent=JSON.stringify({type:"software_world_model_planning_signal",state:"state_0",intent:intentSelect.options[intentSelect.selectedIndex].text,selected_path:best.name,estimated_fit:best.score/100,route:best.steps,target_state:target.target_state,expected_capabilities:target.expected_capabilities,affected_files:target.affected_files,affected_functions:target.affected_functions,execution_hints:["apply changes in route order","validate after each state transition","prefer affected files/functions before expanding scope","stop if tests or behavior drift from intent"]},null,2)}
+function renderMap(){const branches=[{color:"#22c55e",y:[410,305,225,150,72],x:[90,225,365,505,650]},{color:"#f59e0b",y:[410,370,320,270,230],x:[90,225,365,505,650]},{color:"#fb7185",y:[410,245,190,210,170],x:[90,225,365,505,650]}];function p(b){return`M${b.x[0]} ${b.y[0]} C${b.x[1]-60} ${b.y[1]}, ${b.x[1]-20} ${b.y[1]}, ${b.x[1]} ${b.y[1]} S${b.x[2]-20} ${b.y[2]}, ${b.x[2]} ${b.y[2]} S${b.x[3]-20} ${b.y[3]}, ${b.x[3]} ${b.y[3]} S${b.x[4]-20} ${b.y[4]}, ${b.x[4]} ${b.y[4]}`};mapEl.innerHTML=`<defs><filter id="glow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect x="56" y="34" width="510" height="58" rx="16" fill="rgba(139,92,246,0.12)" stroke="rgba(139,92,246,0.25)"/><text x="84" y="59" fill="#c4b5fd" font-size="15">state_0 + intent → candidate rollouts → planning signal</text><text x="84" y="80" fill="#a7b0c7" font-size="13">the selected route is returned to the coding agent before execution</text>${rollouts().map((r,i)=>{const b=branches[i],active=i===selected;return`<path d="${p(b)}" fill="none" stroke="${active?b.color:"rgba(255,255,255,0.22)"}" stroke-width="${active?5:2}" stroke-dasharray="${active?"0":"8 8"}" opacity="${active?.95:.72}" />${b.x.map((x,idx)=>`<circle cx="${x}" cy="${b.y[idx]}" r="${idx===0?11:8}" fill="${idx===0?"#8b5cf6":active?b.color:"rgba(255,255,255,0.36)"}" ${idx===0||(active&&idx===4)?'filter="url(#glow)"':""}/><text x="${x-24}" y="${b.y[idx]-16}" fill="${active?"#eef2ff":"#a7b0c7"}" font-size="13">state_${idx}</text>`).join("")}<text x="500" y="${b.y[4]-26}" fill="${active?b.color:"#a7b0c7"}" font-size="14">${r.name} · ${r.score}%</text>`}).join("")}`}
+function render(){renderState();renderRollouts();renderAnalysis();renderMap()}
+document.getElementById("simulate").addEventListener("click",()=>{selected=0;render()});intentSelect.addEventListener("change",()=>{selected=0;render()});stateSelect.addEventListener("change",render);render();
+</script>
+</body>
+</html>
